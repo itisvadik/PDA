@@ -8,7 +8,7 @@ import os
 
 # Замени эти заглушки на настоящие ключи перед сборкой .exe
 SUBNAUTICA_KEY = "AAAAA-BBBBB-CCCCC"
-SUBNAUTICA_2_KEY = "https://t.me/tsp_a_bot"
+SUBNAUTICA_2_KEY = ""
 
 PDA_VERSION = "2.6.1"
 
