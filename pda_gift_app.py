@@ -10,7 +10,7 @@ import os
 SUBNAUTICA_KEY = "AAAAA-BBBBB-CCCCC"
 SUBNAUTICA_2_KEY = "https://t.me/tsp_a_bot"
 
-PDA_VERSION = "2.6"
+PDA_VERSION = "2.6.1"
 
 def resource_path(relative_path):
     try:
@@ -422,6 +422,15 @@ class PDAApp:
             )
 
             self.root.after(9000, self.root.destroy)
+            return
+
+        if self.normalize(answer) in ["выход", "заебал", "выхожу"]:
+            self.print_line(f"> {answer}")
+            self.type_text(
+                "\n// КПК: ЗАВЕРШЕНИЕ СЕАНСА...\n\n"
+                "До связи, выживший.\n"
+            )
+            self.root.after(2000, self.root.destroy)
             return
 
         if self.caesar_hint_ready and self.normalize(answer) in ["да", "открыть", "согласие", "архив", "ок"]:
