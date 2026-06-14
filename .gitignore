@@ -12,6 +12,7 @@ build/
 
 # Секреты
 .env
+*.txt
 
 # Python
 __pycache__/
