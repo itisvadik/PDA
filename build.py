@@ -1,5 +1,6 @@
 import re
 import subprocess
+import sys
 
 with open("pda_gift_app.py", "r", encoding="utf-8") as f:
     content = f.read()
@@ -9,7 +10,9 @@ match = re.search(r'PDA_VERSION\s*=\s*"([^"]+)"', content)
 version = match.group(1)
 
 subprocess.run([
-    "pyinstaller",
+    sys.executable,
+    "-m",
+    "PyInstaller",
     "--onefile",
     "--noconsole",
     "--name",
@@ -19,8 +22,10 @@ subprocess.run([
     "--add-data",
     "photo_lghkbq.jpg;.",
     "--add-data",
-    "arhive_video_NO3826.MP4;.",
+    "arhive_video_NO3826.mp4;.",
     "--add-data",
-    "arhive_video_NO67.MP4;.",
+    "arhive_video_NO67.mp4;.",
+    "--add-data",
+    "secret.txt;.",
     "pda_gift_app.py"
 ])
