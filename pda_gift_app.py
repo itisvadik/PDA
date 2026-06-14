@@ -5,12 +5,6 @@ import sys
 import os
 import webbrowser
 
-# НАСТРОЙКИ ПОДАРКА
-
-# Замени эти заглушки на настоящие ключи перед сборкой .exe
-SUBNAUTICA_KEY = "AAAAA-BBBBB-CCCCC"
-SUBNAUTICA_2_KEY = "https://t.me/tsp_a_bot"
-
 PDA_VERSION = "2.7-PRE"
 
 def resource_path(relative_path):
@@ -21,11 +15,21 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
+
+def split_key(key):
+    part = len(key) // 3
+    return [
+        key[:part],
+        key[part:part * 2],
+        key[part * 2:]
+    ]
+
 ANSWERS = {
     "start": ["snorix"],
     "oxygen": ["кислород", "воздух"],
     "seaglide": ["глайдер", "морской глайдер"],
     "base": ["левиафан жнец", "жнец"],
+    "boot": ["/reboot"],
     "future": ["subnautica", "сабнатика", "subnautica 2", "сабнатика 2", "сабнавтика", "сабнавтика 2"]
 }
 
@@ -92,6 +96,7 @@ class PDAApp:
         self.fragments = []
         self.caesar_attempts = 0
         self.caesar_hint_ready = False
+        self.key_fragments = split_key(self.SUBNAUTICA_KEY)
 
         self.title_label = tk.Label(
             root, text="КПК [данные повреждены]", font=("Consolas", 24, "bold"),
@@ -115,14 +120,15 @@ class PDAApp:
             relief="flat", padx=14, pady=12
         )
 
+
         def copy_selected(event=None):
             try:
                 selected_text = self.terminal.get("sel.first", "sel.last")
                 self.root.clipboard_clear()
                 self.root.clipboard_append(selected_text)
-                self.print_line("\n// КПК: Выделенный текст скопирован.\n")
+                self.print_line("\n// КПК: Выделенный текст скопирован.\n\n")
             except tk.TclError:
-                self.print_line("\n// КПК: Выделите текст, чтобы скопировать.")
+                self.print_line("// КПК: Выделите текст, чтобы скопировать.")
             return "break"
 
         self.terminal.bind("<Button-3>", copy_selected)
@@ -177,6 +183,35 @@ class PDAApp:
             "из-за повреждений системы\n"
             "// КПК: Доступен список актуальных системных команд. /помощь\n"
         )
+        self.entry.config(state="normal")
+        self.button.config(state="normal")
+
+    def load_secrets(filename="secret.txt"):
+        secrets = {}
+
+        try:
+            with open(resource_path(filename), "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+
+                    if not line or "=" not in line:
+                        continue
+
+                    key, value = line.split("=", 1)
+                    secrets[key.strip()] = value.strip()
+
+        except FileNotFoundError:
+            print("Файл secret.txt не найден")
+
+        return secrets
+
+    secrets = load_secrets()
+
+    SUBNAUTICA_KEY = secrets.get("SUBNAUTICA_KEY", "")
+    SUBNAUTICA_2_KEY = secrets.get("SUBNAUTICA_2_KEY", "")
+
+    print(SUBNAUTICA_KEY)
+    print(SUBNAUTICA_2_KEY)
 
     def play_typing_sound(self):
         try:
@@ -188,6 +223,8 @@ class PDAApp:
             pass
 
     def boot_sequence(self):
+        self.entry.config(state="disabled")
+        self.button.config(state="disabled")
         lines = [
             "// КПК: ЗАГРУЗКА",
             "",
@@ -215,7 +252,46 @@ class PDAApp:
             self.root.update()
             time.sleep(0.30)
 
+    def boot_re_sequence(self):
+        self.entry.config(state="disabled")
+        self.button.config(state="disabled")
+        lines = [
+            "// КПК: ПРИНУДИТЕЛЬНАЯ ПЕРЕЗАГРУЗКА",
+            "",
+            "░░░░░░░░░░ 0%",
+            "█░░░░░░░░░ 10%",
+            "██░░░░░░░░ 20%",
+            "███░░░░░░░ 30%",
+            "████░░░░░░ 40%",
+            "█████░░░░░ 50%",
+            "██████░░░░ 60%",
+            "███████░░░ 70%",
+            "████████░░ 80%",
+            "█████████░ 90%",
+            "██████████ 100%",
+            "",
+            "ПРОВЕРКА ЦЕЛОСТНОСТИ ДАННЫХ...",
+            "",
+            "░░░░░░░░░░ 0%",
+            "█░░░░░░░░░ 10%",
+            "██░░░░░░░░ 20%",
+            "███░░░░░░░ 30%",
+            "████░░░░░░ 40%",
+            "█████░░░░░ 50%",
+            "██████░░░░ 60%",
+            "███████░░░ 70%",
+            "████████░░ 80%",
+            "█████████░ 90%"
+        ]
+
+        for line in lines:
+                self.print_line(line)
+                self.root.update()
+                time.sleep(0.15)
+
     def personal_file_loading(self):
+        self.entry.config(state="disabled")
+        self.button.config(state="disabled")
         lines = [
             "\n\n// КПК: ЗАПРОС ДОСТУПА К АРХИВУ...",
             "",
@@ -261,6 +337,8 @@ class PDAApp:
         return value in [self.normalize(x) for x in ANSWERS[key]]
 
     def archive_loading(self, archive_name="АРХИВ"):
+        self.entry.config(state="disabled")
+        self.button.config(state="disabled")
         lines = [
             f"\n\n// КПК: ПОИСК ДАННЫХ "
             "",
@@ -296,6 +374,8 @@ class PDAApp:
                 "// Доступ разрешён\n"
                 "// Открытие вложения...\n"
             )
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
             try:
                 os.startfile(resource_path("photo_lghkbq.jpg"))
             except Exception:
@@ -303,6 +383,8 @@ class PDAApp:
             return
 
         if self.normalize(answer) == "разработчики":
+            self.entry.config(state="disabled")
+            self.button.config(state="disabled")
             self.print_line(f"> {answer}")
             self.type_text(
                     "\n// КПК: СЛУЖЕБНАЯ ИНФОРМАЦИЯ\n\n"
@@ -313,6 +395,8 @@ class PDAApp:
                     "Джиппи\n\n"
                     "// АВАРИНЫЙ ПРОТОКОЛ\n"
                 )
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
             return
 
         if self.normalize(answer) == "джиппи":
@@ -333,6 +417,8 @@ class PDAApp:
                     "Уровень доступа:\n"
                     "[данные повреждены]\n"
                 )
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
             return
 
         if self.normalize(answer) == "vi":
@@ -351,6 +437,8 @@ class PDAApp:
                     "[данные повреждены]\n\n"
                      "// Доставить на базу любой ценой"
                 )
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
             return
         if self.normalize(answer) in ["3826", "no3826"]:
             self.print_line(f"> {answer}")
@@ -363,8 +451,12 @@ class PDAApp:
                     "xk, Сеченов\n\n"
                     "// bad gateway"
                 )
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
             return
         if self.normalize(answer) == "/статус":
+            self.entry.config(state="disabled")
+            self.button.config(state="disabled")
             self.print_line(f"> {answer}")
             self.type_text(
                 "// КПК: СТАТУС\n\n"
@@ -377,9 +469,13 @@ class PDAApp:
                 f"Доступные архивные данные:\n"
                 "6\n\n"
                 )
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
             return
 
         if self.normalize(answer) in ["sixseven", "six seven", "67", "6 7"]:
+            self.entry.config(state="disabled")
+            self.button.config(state="disabled")
             self.print_line(f"> {answer}")
             self.type_text(
                 "// КПК: ОБНАРУЖЕНА ЗАПРЕЩЁННАЯ ЛЕКСИКА\n\n"
@@ -396,7 +492,7 @@ class PDAApp:
                 "// КПК: ПРИНУДИТЕЛЬНОЕ ЗАВЕРШЕНИЕ РАБОТЫ...\n"
             )
             try:
-                os.startfile(resource_path("arhive_video_NO67.MP4"))
+                os.startfile(resource_path("arhive_video_NO67.mp4"))
             except Exception:
                 self.print_line("// ОШИБКА: Архив SXS-67 повреждён.")
             self.root.after(19000, self.root.destroy)
@@ -406,7 +502,8 @@ class PDAApp:
 
         if normalized_answer in BANNED_WORDS:
             data = BANNED_WORDS[normalized_answer]
-
+            self.entry.config(state="disabled")
+            self.button.config(state="disabled")
             self.print_line(f"> {answer}")
             self.type_text(
                 "// КПК: ОБНАРУЖЕНА ЗАПРЕЩЁННАЯ ЛЕКСИКА\n\n"
@@ -422,11 +519,12 @@ class PDAApp:
                 f"{data['comment']}\n\n"
                 "// КПК: ПРИНУДИТЕЛЬНОЕ ЗАВЕРШЕНИЕ РАБОТЫ...\n"
             )
-
             self.root.after(9000, self.root.destroy)
             return
 
         if self.normalize(answer) == "/выход":
+            self.entry.config(state="disabled")
+            self.button.config(state="disabled")
             self.print_line(f"> {answer}")
             self.type_text(
                 "\n// КПК: ЗАВЕРШЕНИЕ СЕАНСА...\n\n"
@@ -436,15 +534,21 @@ class PDAApp:
             return
 
         if self.normalize(answer) == "/связь":
+            self.entry.config(state="disabled")
+            self.button.config(state="disabled")
             self.print_line(f"> {answer}")
             self.type_text(
                 "// КПК: ПОЛУЧЕНИЕ ДАННЫХ\n\n"
                 "Ошибка:\n"
                 "Данные повреждены"
             )
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
             return
 
         if self.normalize(answer) == "/архив":
+            self.entry.config(state="disabled")
+            self.button.config(state="disabled")
             self.print_line(f"> {answer}")
             self.type_text(
                 "// КПК: ДОСТУП К ЗАПИСЯМ АРХИВА\n\n"
@@ -458,9 +562,13 @@ class PDAApp:
                 "6. [данные зашифрованы].\n\n"
                 "// КПК: Доступ к зашифрованным данным возможно получить, только по вводу названия архива\n"
             )
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
             return
 
         if self.normalize(answer) in ["файлы", "эпштейн", "файлы эпштейна"]:
+            self.entry.config(state="disabled")
+            self.button.config(state="disabled")
             self.print_line(f"> {answer}")
             self.type_text(
                 "// КПК: СТРАННЫЙ ЗАПРОС\n\n"
@@ -470,9 +578,13 @@ class PDAApp:
                 2000,
                 lambda: webbrowser.open("https://www.justice.gov/epstein/search")
             )
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
             return
 
         if self.normalize(answer) == "/помощь":
+            self.entry.config(state="disabled")
+            self.button.config(state="disabled")
             self.print_line(f"> {answer}")
             self.type_text(
                 "// КПК: СИСТЕМНЫЕ КОМАНДЫ\n\n"
@@ -483,35 +595,61 @@ class PDAApp:
                 "5. /логи;\n"
                 "6. /настройки.\n\n"
             )
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
             return
 
         if self.normalize(answer) == "/логи":
+            self.entry.config(state="disabled")
+            self.button.config(state="disabled")
             self.print_line(f"> {answer}")
             self.type_text(
                 "// КПК: ЖУРНАЛ СОБЫТИЙ\n\n"
                 "Ошибка:\n"
                 "Отказано в доступе"
             )
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
             return
 
         if self.normalize(answer) == "/настройки":
+            self.entry.config(state="disabled")
+            self.button.config(state="disabled")
             self.print_line(f"> {answer}")
             self.type_text(
                 "// КПК: НАСТРОЙКИ\n\n"
                 "Ошибка:\n"
                 "Отказано в доступе"
             )
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
+            return
+
+        if self.normalize(answer) == "/онлайн":
+            self.entry.config(state="disabled")
+            self.button.config(state="disabled")
+            self.print_line(f"> {answer}")
+            self.type_text(
+                "// КПК: НАСТРОЙКИ\n\n"
+                "Ошибка:\n"
+                "Отказано в доступе"
+            )
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
             return
 
         if self.caesar_hint_ready and self.normalize(answer) in ["да", "открыть", "согласие", "архив", "ок"]:
+            self.entry.config(state="disabled")
+            self.button.config(state="disabled")
             self.print_line(f"> {answer}")
             self.type_text(
                 "\n// КПК: АРХИВ\n"
                 "Открытие...\n"
             )
-
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
             try:
-                os.startfile(resource_path("arhive_video_NO3826.MP4"))
+                os.startfile(resource_path("arhive_video_NO3826.mp4"))
             except Exception:
                 self.print_line("// ОШИБКА: Файл архива повреждён.")
 
@@ -523,6 +661,8 @@ class PDAApp:
         if self.stage == 0:
             self.fragments = []
             if self.is_answer(answer, "start"):
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
                 self.caesar_attempts = 0
                 self.stage = 1
                 self.type_text(
@@ -536,7 +676,11 @@ class PDAApp:
                     "Но без этого выживший не проживёт и минуты.\n"
                     "Ответ:"
                 )
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
             else:
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
                 self.print_line("ОШИБКА:\n"
                                 "Логин неверный.\n"
                                 "Данные зашифрованы\n\n"
@@ -544,35 +688,53 @@ class PDAApp:
                                 "и вы называете так обычного человека??\n\n"
                                 "«В» здесь явно лишнее" )
                 self.caesar_attempts += 1
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
 
                 if self.caesar_attempts == 4:
                     self.caesar_hint_ready = True
+                    self.entry.config(state="disabled")
+                    self.button.config(state="disabled")
                     self.type_text(
                         "\n// КПК: Обнаружено архивное видео.\n"
                         "Подтвердите согласие на просмотр.\n"
                     )
+                    self.entry.config(state="normal")
+                    self.button.config(state="normal")
 
         elif self.stage == 1:
             if self.is_answer(answer, "oxygen"):
-                self.fragments.append("AAAAA")
+                fragment = self.key_fragments[0]
+                self.fragments.append(fragment)
                 self.stage = 2
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
                 self.type_text(
-                    "\nФРАГМЕНТ 1/3 ВОССТАНОВЛЕН: AAAAA\n\n"
+                    f"\nФРАГМЕНТ 1/3 ВОССТАНОВЛЕН: {fragment}\n\n"
                     "ФРАГМЕНТ 2/3\n"
                     "Маленький, быстрый, спасает от долгих заплывов.\n"
                     "Не подлодка, но без него путь становится мучением.\n"
                     "Ответ:"
                 )
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
             else:
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
                 self.print_line("ОШИБКА:\n"
                                 "Данные не распознаны.")
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
 
         elif self.stage == 2:
             if self.is_answer(answer, "seaglide"):
-                self.fragments.append("BBBBB")
+                fragment = self.key_fragments[1]
+                self.fragments.append(fragment)
                 self.stage = 3
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
                 self.type_text(
-                    "\nФРАГМЕНТ 2/3 ВОССТАНОВЛЕН: BBBBB\n\n"
+                    f"\nФРАГМЕНТ 2/3 ВОССТАНОВЛЕН: {fragment}\n\n"
                     "ФРАГМЕНТ 3/3\n"
                     "[--] обладает длинным телом, немного превосходящим длину «Циклопа».\n"
                     "Он, как и некоторые другие хищники планеты [--], обладает двумя парами чёрных глаз.\n"
@@ -580,47 +742,84 @@ class PDAApp:
                     "скорее всего, для таранных ударов при битвах левиафанов.\n"
                     "Ответ:"
                 )
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
             else:
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
                 self.print_line("ОШИБКА:\n"
                                 "Данные не распознаны.")
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
 
         elif self.stage == 3:
             if self.is_answer(answer, "base"):
-                self.fragments.append("CCCCC")
+                fragment = self.key_fragments[2]
+                self.fragments.append(fragment)
                 self.stage = 4
-                self.type_text(
-                    "\nФРАГМЕНТ 3/3 ВОССТАНОВЛЕН: CCCCC\n\n"
-                    "ЧЕРТЁЖ ВОССТАНОВЛЕН.\n"
-                    "Доступ к архиву открыт.\n\n"
-                    f"КЛЮЧ ВХОДА В СИСТЕМУ КПК:\n{SUBNAUTICA_KEY}\n\n"
-                    "ВНИМАНИЕ.\n"
-                    "Обнаружен новый сигнал.\n"
-                    "Источник неизвестен.\n"
-                    "Сигнал исходит из источника на ранних этапах разработки.\n"
-                    "Чтобы продолжить сканирование, введи название места назначения.\n"
-                    "Ответ:"
-                )
-            else:
-                self.print_line("ОШИБКА:\n"
-                                "Данные не распознаны.")
-
-        elif self.stage == 4:
-            if self.is_answer(answer, "future"):
-                self.stage = 5
-                self.type_text(
-                    "\nСКАНИРОВАНИЕ ЗАВЕРШЕНО.\n"
-                    "Полный доступ восстановлен.\n\n"
-                    f"Для получения доступа к закрытому каналу связи свяжитесь с ТСП:"
-                    f"\n{SUBNAUTICA_2_KEY}\n"
-                    f"Напишите ключ «экспедиция» для запуска автоматического ответа.\n\n"
-                    "С днём рождения, выживший.\n"
-                    "Глубина ждёт.\n"
-                )
                 self.entry.config(state="disabled")
                 self.button.config(state="disabled")
+                self.type_text(
+                    f"\nФРАГМЕНТ 3/3 ВОССТАНОВЛЕН: {fragment}\n\n"
+                    "ЧЕРТЁЖ ВОССТАНОВЛЕН.\n"
+                    "Доступ к архиву открыт.\n\n"
+                    f"КЛЮЧ ВХОДА В СИСТЕМУ КПК:\n{self.SUBNAUTICA_KEY}\n\n"
+                    "// КПК: АВТОРИЗАЦИЯ.\n"
+                    "// Успешно\n\n"
+                    "// КПК: ЗАГРУЗКА БОРТОВОГО САМОПИСЦА\n\n"
+                    "// ПЕРЕЗАГРУЗКА\n\n"
+                    "// Требуется участие человека, /reboot\n"
+                )
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
             else:
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
+                self.print_line("ОШИБКА:\n"
+                                "Данные не распознаны.")
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
+
+        elif self.stage == 4:
+            if self.is_answer(answer, "boot"):
+                self.boot_re_sequence()
+                self.stage = 5
+                self.type_text(
+                    "// БОРТОВОЙ САМОПИСЕЦ: [активен]\n\n"
+                    "// Внимание // Курс «Земля — Зезура» [сбит] // Время полёта [неизвестно] // Экипаж /чел/ [6000] / [угроза] // Сигнал [пилинг] // [обработка] // [ошибка]\n"
+                    "// БОРТОВОЙ САМОПИСЕЦ: [деинсталяция]\n\n"
+                    "// КПК: Выполнено\n\n"
+                    "// Зашифрованный канал\n\n"
+                    "Добро пожаловать, ([snorix] — [lghkbq])\n"
+                    "Требуется подтверждение вашей компетентности\n\n"
+                )
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
+            else:
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
                 self.print_line("ОШИБКА:\n"
                                 "Сигнал не распознан.")
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
+
+#        elif self.stage == :
+#           if self.is_answer(answer, ""):
+#                self.stage =
+#                self.type_text(
+#                    "\nСКАНИРОВАНИЕ ЗАВЕРШЕНО.\n"
+#                    "Полный доступ восстановлен.\n\n"
+#                    f"Для получения доступа к закрытому каналу связи свяжитесь с ТСП:"
+#                    f"\n{self.SUBNAUTICA_2_KEY}\n"
+#                    f"Напишите ключ «экспедиция» для запуска автоматического ответа.\n\n"
+#                    "С днём рождения, выживший.\n"
+#                    "Глубина ждёт.\n"
+#                )
+#                self.entry.config(state="disabled")
+#                self.button.config(state="disabled")
+#            else:
+#                self.print_line("ОШИБКА:\n"
+#                                "Сигнал не распознан.")
 
 if __name__ == "__main__":
     root = tk.Tk()
