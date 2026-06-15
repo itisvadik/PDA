@@ -10,10 +10,10 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
 
-TSP_VERSION = "1.2"
+TSP_VERSION = "1.3"
 
 SECRET_KEY = "экспедиция"
-MESSAGE_DELAY_SECONDS = 15
+MESSAGE_DELAY_SECONDS = 7
 
 TSP_MESSAGES = [
     "Здравствуйте, [lghkbq].",
@@ -32,6 +32,8 @@ WRONG_REPLY = (
     "Ключ доступа не распознан.\n"
     "Проверьте данные и повторите попытку."
 )
+
+completed_users = set()
 
 def normalize(text: str) -> str:
     return text.strip().lower().replace("ё", "е")
@@ -65,30 +67,52 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = normalize(update.message.text)
     user = update.effective_user
+    chat_id = update.effective_chat.id
 
     if user_text == SECRET_KEY:
-        for message in TSP_MESSAGES:
+        if user.id in completed_users:
             await type_message(
                 context.bot,
-                update.effective_chat.id,
-                message
+                chat_id,
+                "// ТСП-А.\n\nЗапрос уже зарегистрирован.\nОжидайте."
             )
-            await asyncio.sleep(MESSAGE_DELAY_SECONDS)
+            return
+
+        completed_users.add(user.id)
 
         if ADMIN_CHAT_ID:
-            await context.bot.send_message(
-                chat_id=int(ADMIN_CHAT_ID),
-                text=(
-                    "СИГНАЛ ПОЛУЧЕН.\n\n"
-                    "Квест пройден.\n"
-                    f"Пользователь: @{user.username if user.username else 'без username'}\n"
-                    f"Имя: {user.full_name}\n\n"
-                    "Введён ключ «экспедиция».\n"
-                    "Можно отправлять Steam Gift в течение 30 минут."
+            try:
+                await context.bot.send_message(
+                    chat_id=int(ADMIN_CHAT_ID),
+                    text=(
+                        "СИГНАЛ ПОЛУЧЕН.\n\n"
+                        "Квест начат.\n"
+                        f"Пользователь: @{user.username if user.username else 'без username'}\n"
+                        f"Имя: {user.full_name}\n\n"
+                        "Введён ключ «экспедиция».\n"
+                        f"Можно отправлять Steam-Gift в течение 30 минут {MESSAGE_DELAY_SECONDS * 7} секунд."
+                    )
                 )
-            )
+            except Exception as e:
+                print("Ошибка отправки уведомления админу:", e)
+
+        for message in TSP_MESSAGES:
+            try:
+                await type_message(
+                    context.bot,
+                    chat_id,
+                    message
+                )
+                await asyncio.sleep(MESSAGE_DELAY_SECONDS)
+            except Exception as e:
+                print("Ошибка отправки сообщения пользователю:", e)
+                break
+
     else:
-        await type_message(context.bot, update.effective_chat.id, WRONG_REPLY)
+        try:
+            await type_message(context.bot, chat_id, WRONG_REPLY)
+        except Exception as e:
+            print("Ошибка отправки WRONG_REPLY:", e)
 
 def main():
     if not BOT_TOKEN:
