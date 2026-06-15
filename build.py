@@ -22,6 +22,8 @@ subprocess.run([
     "--add-data",
     "photo_lghkbq.jpg;.",
     "--add-data",
+    "photo_post_1.jpg;.",
+    "--add-data",
     "arhive_video_NO3826.mp4;.",
     "--add-data",
     "arhive_video_NO67.mp4;.",

@@ -5,7 +5,7 @@ import sys
 import os
 import webbrowser
 
-PDA_VERSION = "2.7-PRE"
+PDA_VERSION = "2.7"
 
 def resource_path(relative_path):
     try:
@@ -30,6 +30,8 @@ ANSWERS = {
     "seaglide": ["глайдер", "морской глайдер"],
     "base": ["левиафан жнец", "жнец"],
     "boot": ["/reboot"],
+    "water": ["1800", "1800 м", "1800 метров"],
+    "resource": ["1 2 3 6 8"],
     "future": ["subnautica", "сабнатика", "subnautica 2", "сабнатика 2", "сабнавтика", "сабнавтика 2"]
 }
 
@@ -97,6 +99,11 @@ class PDAApp:
         self.caesar_attempts = 0
         self.caesar_hint_ready = False
         self.key_fragments = split_key(self.SUBNAUTICA_KEY)
+        self.depth_attempts = 0
+        self.debug_mode = False
+        self.waiting_debug_password = False
+        self.typing_sound_enabled = True
+        self.settings_mode = False
 
         self.title_label = tk.Label(
             root, text="КПК [данные повреждены]", font=("Consolas", 24, "bold"),
@@ -209,11 +216,12 @@ class PDAApp:
 
     SUBNAUTICA_KEY = secrets.get("SUBNAUTICA_KEY", "")
     SUBNAUTICA_2_KEY = secrets.get("SUBNAUTICA_2_KEY", "")
-
-    print(SUBNAUTICA_KEY)
-    print(SUBNAUTICA_2_KEY)
+    DEBUG_PASSWORD = secrets.get("DEBUG_PASSWORD", "")
 
     def play_typing_sound(self):
+        if not self.typing_sound_enabled:
+            return
+
         try:
             winsound.PlaySound(
                 resource_path("button.wav"),
@@ -225,40 +233,106 @@ class PDAApp:
     def boot_sequence(self):
         self.entry.config(state="disabled")
         self.button.config(state="disabled")
-        lines = [
-            "// КПК: ЗАГРУЗКА",
-            "",
+
+        self.type_text(
+            "// КПК: ЗАГРУЗКА\n\n"
+        )
+        login_line = self.terminal.index("end-1c")
+
+        current = ("░░░░░░░░░░ 0%")
+
+        self.terminal.insert(
+            "end",
+            f"{current}\n"
+        )
+
+        self.terminal.see("end")
+        self.root.update()
+        time.sleep(1.7)
+
+        build_frames = [
+            "██░░░░░░░░ 20%",
+            "████░░░░░░ 40%",
+            "██████░░░░ 60%",
+            "████████░░ 80%",
             "██████████ 100%",
-            "",
-            "ПРОВЕРКА ЦЕЛОСТНОСТИ ДАННЫХ...",
-            "",
-            "// ОШИБКА",
-            "",
-            "ОБНАРУЖЕНО ПОВРЕЖДЕНИЕ ПАМЯТИ",
-            "",
-            "ПОПЫТКА ВОССТАНОВЛЕНИЯ...",
-            "",
-            "██░░░░░░░░ 15%",
-            "████░░░░░░ 42%",
-            "███████░░░ 71%",
-            "",
-            "// ОШИБКА",
-            "",
-            "ПЕРЕХОД В АВАРИЙНЫЙ РЕЖИМ..."
         ]
 
-        for line in lines:
-            self.print_line(line)
+        for frame in build_frames:
+            self.terminal.delete(login_line, "end-1c")
+            self.terminal.insert(
+                login_line,
+                f"{frame}\n"
+            )
+            self.terminal.see("end")
             self.root.update()
-            time.sleep(0.30)
+            time.sleep(0.12)
+
+
+        self.type_text(
+            "ПРОВЕРКА ЦЕЛОСТНОСТИ ДАННЫХ...\n\n"
+            "// ОШИБКА\n\n"
+            "ОБНАРУЖЕНО ПОВРЕЖДЕНИЕ ПАМЯТИ\n\n"
+            "ПОПЫТКА ВОССТАНОВЛЕНИЯ...\n\n"
+        )
+
+        login_line = self.terminal.index("end-1c")
+
+        current = ("░░░░░░░░░░ 0%")
+
+        self.terminal.insert(
+            "end",
+            f"{current}\n"
+        )
+
+        self.terminal.see("end")
+        self.root.update()
+        time.sleep(1.7)
+
+        build_frames = [
+            "██░░░░░░░░ 20%",
+            "████░░░░░░ 40%",
+            "██████░░░░ 60%",
+            "████████░░ 80%",
+        ]
+
+        for frame in build_frames:
+            self.terminal.delete(login_line, "end-1c")
+            self.terminal.insert(
+                login_line,
+                f"{frame}\n"
+            )
+            self.terminal.see("end")
+            self.root.update()
+            time.sleep(0.12)
+
+        self.type_text(
+            "// ОШИБКА\n\n"
+            ""
+            "ПЕРЕХОД В АВАРИЙНЫЙ РЕЖИМ...\n\n"
+        )
 
     def boot_re_sequence(self):
         self.entry.config(state="disabled")
         self.button.config(state="disabled")
-        lines = [
-            "// КПК: ПРИНУДИТЕЛЬНАЯ ПЕРЕЗАГРУЗКА",
-            "",
-            "░░░░░░░░░░ 0%",
+
+        self.type_text(
+            "// КПК: ПРИНУДИТЕЛЬНАЯ ПЕРЕЗАГРУЗКА\n\n"
+        )
+        login_line = self.terminal.index("end-1c")
+
+        current = ("░░░░░░░░░░ 0%")
+
+        self.terminal.insert(
+            "end",
+            f"{current}\n"
+        )
+
+        self.terminal.see("end")
+        self.root.update()
+        time.sleep(1.7)
+
+        build_frames = [
             "█░░░░░░░░░ 10%",
             "██░░░░░░░░ 20%",
             "███░░░░░░░ 30%",
@@ -269,10 +343,35 @@ class PDAApp:
             "████████░░ 80%",
             "█████████░ 90%",
             "██████████ 100%",
-            "",
-            "ПРОВЕРКА ЦЕЛОСТНОСТИ ДАННЫХ...",
-            "",
-            "░░░░░░░░░░ 0%",
+        ]
+
+        for frame in build_frames:
+            self.terminal.delete(login_line, "end-1c")
+            self.terminal.insert(
+                login_line,
+                f"{frame}\n"
+            )
+            self.terminal.see("end")
+            self.root.update()
+            time.sleep(0.12)
+
+        self.type_text(
+            "ПРОВЕРКА ЦЕЛОСТНОСТИ ДАННЫХ...\n\n"
+        )
+        login_line = self.terminal.index("end-1c")
+
+        current = ("░░░░░░░░░░ 0%")
+
+        self.terminal.insert(
+            "end",
+            f"{current}\n"
+        )
+
+        self.terminal.see("end")
+        self.root.update()
+        time.sleep(1.7)
+
+        build_frames = [
             "█░░░░░░░░░ 10%",
             "██░░░░░░░░ 20%",
             "███░░░░░░░ 30%",
@@ -281,29 +380,84 @@ class PDAApp:
             "██████░░░░ 60%",
             "███████░░░ 70%",
             "████████░░ 80%",
-            "█████████░ 90%"
+            "█████████░ 90%",
+            "██████████ 100%",
         ]
 
-        for line in lines:
-                self.print_line(line)
-                self.root.update()
-                time.sleep(0.15)
+        for frame in build_frames:
+            self.terminal.delete(login_line, "end-1c")
+            self.terminal.insert(
+                login_line,
+                f"{frame}\n"
+            )
+            self.terminal.see("end")
+            self.root.update()
+            time.sleep(0.12)
+
+    def login_animation(self):
+        login_line = self.terminal.index("end-1c")
+
+        current = "[snorix]"
+
+        self.terminal.insert(
+            "end",
+            f"Добро пожаловать, {current}\n"
+        )
+
+        self.terminal.see("end")
+        self.root.update()
+        time.sleep(0.7)
+
+        # Стирание справа налево
+        erase_frames = [
+            "[snori_]",
+            "[snor__]",
+            "[sno___]",
+            "[sn____]",
+            "[s_____]",
+            "[______]",
+        ]
+
+        for frame in erase_frames:
+            self.terminal.delete(login_line, "end-1c")
+            self.terminal.insert(
+                login_line,
+                f"Добро пожаловать, {frame}\n"
+            )
+            self.terminal.see("end")
+            self.root.update()
+            time.sleep(0.12)
+
+        time.sleep(0.3)
+
+        # Восстановление
+        build_frames = [
+            "[l_____]",
+            "[lg____]",
+            "[lgh___]",
+            "[lghk__]",
+            "[lghkb_]",
+            "[lghkbq]",
+        ]
+
+        for frame in build_frames:
+            self.terminal.delete(login_line, "end-1c")
+            self.terminal.insert(
+                login_line,
+                f"Добро пожаловать, {frame}\n"
+            )
+            self.terminal.see("end")
+            self.root.update()
+            time.sleep(0.12)
 
     def personal_file_loading(self):
         self.entry.config(state="disabled")
         self.button.config(state="disabled")
-        lines = [
-            "\n\n// КПК: ЗАПРОС ДОСТУПА К АРХИВУ...",
-            "",
-            "██████████ 100%",
-            "",
-            "ВОССТАНОВЛЕНИЕ ЛИЧНОГО ДЕЛА...",
-            "",
-            "███░░░░░░░ 33%",
-            "██████░░░░ 66%",
-            "██████████ 100%"
-        ]
 
+        lines = [
+            "",
+            "// КПК: ЗАПРОС ДОСТУПА К АРХИВУ...",
+        ]
         for line in lines:
             self.print_line(line)
             self.root.update()
@@ -336,31 +490,72 @@ class PDAApp:
         value = self.normalize(user_text)
         return value in [self.normalize(x) for x in ANSWERS[key]]
 
+    def is_depth_answer(self, answer):
+        clean = answer.strip().replace("м", "").replace("метров", "").strip()
+        return clean == "1800"
+
+    def get_depth_hint(self, answer):
+        try:
+            value = int(
+                answer.lower()
+                .replace("м", "")
+                .replace("метров", "")
+                .strip()
+            )
+        except ValueError:
+            return "Введите числовое значение глубины."
+
+        if value < 1800:
+            return "Система сообщает: глубже."
+        elif value > 1800:
+            return "Система сообщает: меньше."
+        else:
+            return ""
+
+    def is_resources_answer(self, answer):
+        clean = answer.replace(",", " ")
+        user_resources = set(clean.split())
+        correct_resources = {"1", "2", "3", "6", "8"}
+
+        return user_resources == correct_resources
+
     def archive_loading(self, archive_name="АРХИВ"):
         self.entry.config(state="disabled")
         self.button.config(state="disabled")
-        lines = [
-            f"\n\n// КПК: ПОИСК ДАННЫХ "
-            "",
-            f"{archive_name}",
-            "",
+
+        self.type_text(
+            f"// КПК: ПОИСК ДАННЫХ\n"
+            f"{archive_name}\n\n"
+        )
+
+        login_line = self.terminal.index("end-1c")
+
+        current = ("░░░░░░░░░░ 0%")
+
+        self.terminal.insert(
+            "end",
+            f"{current}\n"
+        )
+
+        self.terminal.see("end")
+        self.root.update()
+        time.sleep(2.7)
+
+        build_frames = [
             "███░░░░░░░ 33%",
             "██████░░░░ 66%",
             "██████████ 100%",
-            "",
-            "ПРОВЕРКА ПРАВ ДОСТУПА...",
-            "",
-            "███░░░░░░░ 33%",
-            "██████░░░░ 66%",
-            "██████████ 100%",
-            "",
-            "ДОСТУП РАЗРЕШЁН"
         ]
 
-        for line in lines:
-            self.print_line(line)
+        for frame in build_frames:
+            self.terminal.delete(login_line, "end-1c")
+            self.terminal.insert(
+                login_line,
+                f"{frame}\n"
+            )
+            self.terminal.see("end")
             self.root.update()
-            time.sleep(0.20)
+            time.sleep(0.12)
 
     def check_answer(self):
         answer = self.entry.get()
@@ -382,6 +577,80 @@ class PDAApp:
                 self.print_line("ОШИБКА: Файл анкеты не найден.")
             return
 
+        if self.normalize(answer) == "/отладка":
+            self.waiting_debug_password = True
+
+            self.entry.config(state="disabled")
+            self.button.config(state="disabled")
+            if not self.DEBUG_PASSWORD:
+                self.print_line(
+                    "\n\n// ОТЛАДКА НЕДОСТУПНА\n"
+                    "Пароль разработчика отсутствует."
+                )
+                return
+            else:
+                self.type_text(
+                    "// РЕЖИМ РАЗРАБОТЧИКА\n\n"
+                    "Введите пароль:\n"
+                )
+            self.entry.config(state="normal")
+            self.button.config(state="normal")
+            return
+
+        if self.waiting_debug_password:
+            if answer == self.DEBUG_PASSWORD:
+                self.debug_mode = True
+
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
+
+                self.type_text(
+                    "// ОТЛАДКА АКТИВИРОВАНА\n\n"
+                    "Используйте команду:\n"
+                    "/прыжок [n]\n\n"
+                    "/прыжок 0  -> старт\n"
+                    "/прыжок 1  -> кислород\n"
+                    "/прыжок 2  -> глайдер\n"
+                    "/прыжок 3  -> жнец\n"
+                    "/прыжок 4  -> /reboot\n"
+                    "/прыжок 5  -> глубина\n"
+                    "/прыжок 6  -> ресурсы\n"
+                    "/прыжок 7  -> место назначения\n"
+                )
+
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
+            else:
+                self.print_line("Неверный пароль.")
+
+            self.waiting_debug_password = False
+            return
+
+        if self.debug_mode and self.normalize(answer).startswith("/прыжок"):
+            try:
+                stage = int(answer.split()[1])
+
+                self.stage = stage
+
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
+
+                self.type_text(
+                    f"// ОТЛАДКА\n"
+                    f"Переход к stage {stage}\n\n"
+                )
+
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
+
+            except:
+                self.print_line(
+                    "Использование:\n"
+                    "/прыжок 5"
+                )
+
+            return
+
         if self.normalize(answer) == "разработчики":
             self.entry.config(state="disabled")
             self.button.config(state="disabled")
@@ -393,7 +662,7 @@ class PDAApp:
                     "Логин зашифрован: xk\n\n"
                     "Технический специалист-консультант:\n"
                     "Джиппи\n\n"
-                    "// АВАРИНЫЙ ПРОТОКОЛ\n"
+                    "// АВАРИЙНЫЙ ПРОТОКОЛ\n"
                 )
             self.entry.config(state="normal")
             self.button.config(state="normal")
@@ -538,9 +807,9 @@ class PDAApp:
             self.button.config(state="disabled")
             self.print_line(f"> {answer}")
             self.type_text(
-                "// КПК: ПОЛУЧЕНИЕ ДАННЫХ\n\n"
+                "// КПК: ВЫХОД В СЕТЬ\n\n"
                 "Ошибка:\n"
-                "Данные повреждены"
+                "Отказано в доступе"
             )
             self.entry.config(state="normal")
             self.button.config(state="normal")
@@ -605,24 +874,72 @@ class PDAApp:
             self.print_line(f"> {answer}")
             self.type_text(
                 "// КПК: ЖУРНАЛ СОБЫТИЙ\n\n"
-                "Ошибка:\n"
-                "Отказано в доступе"
+                "// Доступ\n\n"
+                "[ЛОГ 001]\n"
+                "Статус системы:\n"
+                "аварийный запуск.\n"
+                "Обнаружено повреждение памяти.\n"
+                "Попытка восстановления:\n"
+                "частичное.\n\n"
+                "[ЛОГ 002]\n"
+                "Пользователь:\n"
+                "[данные повреждены]\n"
+                "Логин аварийно зашифрован.\n"
+                "Режим доступа:\n"
+                "ограниченный.\n\n"
+                "[ЛОГ 003]\n"
+                "Обнаружен внешний сигнал.\n"
+                "Источник:\n"
+                "неизвестен.\n"
+                "Приоритет:\n"
+                "[изучается].\n\n"
+                "[ЛОГ 004]\n"
+                "Выполнена ручная перезагрузка.\n"
+                "Бортовой самописец:\n"
+                "[спит]/[ожидает].\n\n"
+                "[ЛОГ 005]\n"
+                "[повреждён]\n\n"
+                "[ЛОГ 006]\n"
+                "Автоматическая оценка вероятности успеха экспедиции:\n"
+                "[обработка] %\n\n"
+                "// Комментарий: «Глубина ждёт».\n"
             )
             self.entry.config(state="normal")
             self.button.config(state="normal")
             return
 
         if self.normalize(answer) == "/настройки":
+            self.settings_mode = True
             self.entry.config(state="disabled")
             self.button.config(state="disabled")
-            self.print_line(f"> {answer}")
+
+            status = "ВКЛ" if self.typing_sound_enabled else "ВЫКЛ"
+
             self.type_text(
                 "// КПК: НАСТРОЙКИ\n\n"
-                "Ошибка:\n"
-                "Отказано в доступе"
+                f"Звук: {status}\n\n"
+                "Доступные команды:\n\n"
+                "// звук:\n"
+                "вкл\n"
+                "выкл\n"
             )
             self.entry.config(state="normal")
             self.button.config(state="normal")
+            return
+
+        if self.settings_mode and self.normalize(answer) == "выкл":
+            self.typing_sound_enabled = False
+            self.print_line("// КПК: Звук печати отключён.")
+            return
+
+        if self.settings_mode and self.normalize(answer) == "вкл":
+            self.typing_sound_enabled = True
+            self.print_line("// КПК: Звук печати включён.")
+            return
+
+        if self.settings_mode and self.normalize(answer) == "выход":
+            self.settings_mode = False
+            self.print_line("// КПК: Выход из настроек.")
             return
 
         if self.normalize(answer) == "/онлайн":
@@ -630,10 +947,14 @@ class PDAApp:
             self.button.config(state="disabled")
             self.print_line(f"> {answer}")
             self.type_text(
-                "// КПК: НАСТРОЙКИ\n\n"
-                "Ошибка:\n"
-                "Отказано в доступе"
+                "// КПК: РЕЛИЗНЫЙ ПОСТЕР\n\n"
+                "// Доступ\n"
+                "Открытие вложения..."
             )
+            try:
+                os.startfile(resource_path("photo_post_1.jpg"))
+            except Exception:
+                self.print_line("// ОШИБКА: Файл повреждён.")
             self.entry.config(state="normal")
             self.button.config(state="normal")
             return
@@ -668,8 +989,8 @@ class PDAApp:
                 self.type_text(
                     "\nДоступ подтверждён.\n"
                     "Добро пожаловать, snorix\n"
-                    "Ошибка ключей безопасности.\n"
-                    "База данных зашифрована от несанкционированного доступа.\n"
+                    "Ошибка ключа безопасности.\n"
+                    "База данных закрыта от несанкционированного доступа.\n"
                     "Для восстановления доступа пройдите проверку на [данные повреждены].\n\n"
                     "ФРАГМЕНТ 1/3\n"
                     "Чем глубже ты уходишь, тем меньше света.\n"
@@ -761,13 +1082,12 @@ class PDAApp:
                 self.button.config(state="disabled")
                 self.type_text(
                     f"\nФРАГМЕНТ 3/3 ВОССТАНОВЛЕН: {fragment}\n\n"
-                    "ЧЕРТЁЖ ВОССТАНОВЛЕН.\n"
-                    "Доступ к архиву открыт.\n\n"
-                    f"КЛЮЧ ВХОДА В СИСТЕМУ КПК:\n{self.SUBNAUTICA_KEY}\n\n"
+                    "// ЧАСТИЧНЫЙ ДОСТУП\n\n"
+                    f"КЛЮЧ БЕЗОПАСНОСТИ КПК:\n«{self.SUBNAUTICA_KEY}»\n\n"
                     "// КПК: АВТОРИЗАЦИЯ.\n"
                     "// Успешно\n\n"
                     "// КПК: ЗАГРУЗКА БОРТОВОГО САМОПИСЦА\n\n"
-                    "// ПЕРЕЗАГРУЗКА\n\n"
+                    "// РУЧНАЯ ПЕРЕЗАГРУЗКА\n\n"
                     "// Требуется участие человека, /reboot\n"
                 )
                 self.entry.config(state="normal")
@@ -786,13 +1106,19 @@ class PDAApp:
                 self.stage = 5
                 self.type_text(
                     "// БОРТОВОЙ САМОПИСЕЦ: [активен]\n\n"
-                    "// Внимание // Курс «Земля — Зезура» [сбит] // Время полёта [неизвестно] // Экипаж /чел/ [6000] / [угроза] // Сигнал [пилинг] // [обработка] // [ошибка]\n"
+                    "// Внимание // Курс «Земля — Зезура» [сбит] // Время полёта [неизвестно] // Экипаж /чел/ [6000] / [угроза] // Сигнал [пилинг] // [обработка] // [ошибка]\n\n"
                     "// БОРТОВОЙ САМОПИСЕЦ: [деинсталяция]\n\n"
                     "// КПК: Выполнено\n\n"
                     "// Зашифрованный канал\n\n"
-                    "Добро пожаловать, ([snorix] — [lghkbq])\n"
-                    "Требуется подтверждение вашей компетентности\n\n"
                 )
+                self.login_animation()
+                self.type_text(
+                "\nТребуется подтверждение вашей компетентности\n\n"
+                "// ПРОВЕРКА ГЛУБИНЫ\n\n"
+                "Какая максимальная глубина погружения доступна\n"
+                "для оборудования выжившего после полного улучшения?\n\n"
+                 "Ответ укажите числом в метрах:\n"
+                 )
                 self.entry.config(state="normal")
                 self.button.config(state="normal")
             else:
@@ -803,23 +1129,108 @@ class PDAApp:
                 self.entry.config(state="normal")
                 self.button.config(state="normal")
 
-#        elif self.stage == :
-#           if self.is_answer(answer, ""):
-#                self.stage =
-#                self.type_text(
-#                    "\nСКАНИРОВАНИЕ ЗАВЕРШЕНО.\n"
-#                    "Полный доступ восстановлен.\n\n"
-#                    f"Для получения доступа к закрытому каналу связи свяжитесь с ТСП:"
-#                    f"\n{self.SUBNAUTICA_2_KEY}\n"
-#                    f"Напишите ключ «экспедиция» для запуска автоматического ответа.\n\n"
-#                    "С днём рождения, выживший.\n"
-#                    "Глубина ждёт.\n"
-#                )
-#                self.entry.config(state="disabled")
-#                self.button.config(state="disabled")
-#            else:
-#                self.print_line("ОШИБКА:\n"
-#                                "Сигнал не распознан.")
+        elif self.stage == 5:
+            if self.is_answer(answer,"water"):
+                self.stage = 6
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
+
+                self.type_text(
+                    "\n// ГЛУБИНА ПОДТВЕРЖДЕНА\n\n"
+                    "Максимальная глубина:\n"
+                    "1800 м\n\n"
+                    "// АНАЛИЗ МЕСТНОСТИ\n\n"
+                    "Выберите из списка ресурсы,\n"
+                    "встречающиеся в местности.\n\n"
+                    "Введите номера через пробел.\n\n"
+                    "1. Титан\n"
+                    "2. Рубин\n"
+                    "3. Алмаз\n"
+                    "4. Изумруд\n"
+                    "5. Банан\n"
+                    "6. Соль\n"
+                    "7. Шерсть\n"
+                    "8. Зубы\n\n"
+                    "Ответ:"
+                    )
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
+            else:
+                self.depth_attempts += 1
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
+
+                if self.depth_attempts % 1 == 0:
+                    hint = self.get_depth_hint(answer)
+                    self.print_line(
+                        "ОШИБКА:\n"
+                        "Глубина не подтверждена.\n"
+                        f"{hint}"
+                    )
+                else:
+                    self.print_line(
+                        "ОШИБКА:\n"
+                        "Глубина не подтверждена."
+                    )
+
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
+
+        elif self.stage == 6:
+            if self.is_answer(answer,"resource"):
+                self.stage = 7
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
+
+                self.type_text(
+                "\n// СКАНИРОВАНИЕ\n\n"
+                "Титан          [обнаружен]\n"
+                "Рубин          [обнаружен]\n"
+                "Алмаз          [обнаружен]\n"
+                "Соль           [обнаружена]\n"
+                "Зубы           [обнаружены]\n\n"
+                "Совпадений: 5\n"
+                "Результат: подтверждено\n\n"
+                "Введите место назначения:\n"
+                )
+
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
+            else:
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
+                self.print_line(
+                    "ОШИБКА:\n"
+                    "Совпадений недостаточно.\n"
+                    "Повторите анализ местности."
+                )
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
+
+
+        elif self.stage == 7:
+            if self.is_answer(answer, "future"):
+                self.stage = 8
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
+                self.type_text(
+                    "\n// ЗАВЕРШЕНО.\n"
+                    "Процент выживание: 100%.\n\n"
+                    f"Для получения доступа к закрытому каналу связи свяжитесь с ТСП-А:"
+                    f"\n«{self.SUBNAUTICA_2_KEY}»\n"
+                    f"Напишите ключ «экспедиция» для запуска автоматического ответа.\n\n"
+                    "С днём рождения, выживший.\n"
+                    "Глубина ждёт.\n"
+                )
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
+            else:
+                self.entry.config(state="disabled")
+                self.button.config(state="disabled")
+                self.print_line("ОШИБКА:\n"
+                                "Сигнал не распознан.")
+                self.entry.config(state="normal")
+                self.button.config(state="normal")
 
 if __name__ == "__main__":
     root = tk.Tk()
