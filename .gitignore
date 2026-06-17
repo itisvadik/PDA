@@ -23,7 +23,7 @@ __pycache__/
 
 # Медиа
 *.txt
-*.md
+README.md
 
 # Видео
 *.mp4
