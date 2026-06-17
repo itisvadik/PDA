@@ -12,6 +12,7 @@ build/
 
 # Секреты
 .env
+secret.txt
 
 # Python
 __pycache__/
@@ -22,7 +23,6 @@ __pycache__/
 *.spec
 
 # Медиа
-*.txt
 README.md
 
 # Видео
