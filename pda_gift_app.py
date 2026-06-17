@@ -5,6 +5,9 @@ import sys
 import os
 import webbrowser
 
+# Дата начала разработки: 03.06.2026
+# Дата релиза: 16.06.2026
+
 PDA_VERSION = "2.7"
 
 def resource_path(relative_path):
